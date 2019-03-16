@@ -46,7 +46,7 @@ window.onload = function() {
 
         let playerSize = 6;
 
-        // Dot at player positionwwwwwww
+        // Dot at player position
         ctx.fillStyle = 'black';
         ctx.fillRect(
             player.x * this.scale - playerSize / 2,
