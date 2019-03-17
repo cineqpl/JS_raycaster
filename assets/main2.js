@@ -2,12 +2,13 @@ window.onload = function() {
     const TWO_PI = 2 * Math.PI;
 
     class Map {
-        constructor(width, height, wallGrid, scale, colors) {
+        constructor(width, height, wallGrid, scale, colors, textures) {
             this.width = width;
             this.height = height;
             this.wallGrid = wallGrid;
             this.scale = scale;
             this.colors = colors;
+            this.textures = textures;
         }
     }
 
@@ -94,6 +95,13 @@ window.onload = function() {
         }
     }
 
+    class Texture {
+        constructor(image) {
+            this.source = new Image();
+            this.source.src = image;
+        }
+    }
+
     class Controls {
         constructor() {
             this.codes = {
@@ -128,7 +136,7 @@ window.onload = function() {
             this.x = initX;
             this.y = initY;
             this.direction = initDir;
-            this.moveSpeed = 3;
+            this.moveSpeed = 5;
             this.rotationSpeed = 60 * Math.PI / 180;
         }
     }
@@ -218,7 +226,9 @@ window.onload = function() {
             var wallY = Math.floor(y);
 
             if(map.get(wallX, wallY) > 0) {
-                var wallColor = map.colors[map.get(wallX, wallY)];
+                var wallOffset = y % 1;
+                var wallType = map.get(wallX, wallY);
+                var darker = 0;
                 var distX = x - player.x;
                 var distY = y - player.y;
 
@@ -247,7 +257,9 @@ window.onload = function() {
                 var vertDist = distX * distX + distY * distY;
 
                 if((dist == 0) || (vertDist < dist)) {
-                    var wallColor = map.colors[map.get(wallX, wallY)];
+                    var wallOffset = x % 1;
+                    var wallType = map.get(wallX, wallY);
+                    var darker = 1;
                     dist = vertDist;
                 }
 
@@ -258,14 +270,17 @@ window.onload = function() {
             y += dY;
         }
 
-        let columnWidth = this.width / resolution;
+        let columnWidth = this.width / this.resolution;
         let xPos = this.width / 2 + columnWidth * (offset * this.resolution / this.fov);
+        let z = 600;
         let corrDist = Math.sqrt(dist) * Math.cos(offset);
      
         let ctx = display.getContext('2d');
-        let lightning = Math.max(20, 60 - corrDist);
-        ctx.fillStyle = wallColor;
-        ctx.fillRect(xPos, this.height / 2 - 200 / corrDist, columnWidth, 400 / corrDist);
+        ctx.drawImage(map.textures.source,
+            (wallType - 1) * 64 + wallOffset * 63, darker * 64,
+            64 * (columnWidth / this.resolution), 64,
+            xPos, this.height / 2 - (z / 2) / corrDist,
+            columnWidth, z / corrDist);
     }
 
     // Important - check for collisions only using Map.get()
@@ -337,6 +352,7 @@ window.onload = function() {
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
     ];
     var colors = {1: 'rgb(180, 180, 180)', 2: 'rgb(0, 51, 204)', 3: 'rgb(204, 102, 0)', 4: 'rgb(255, 255, 0)'};
+    var texture = new Texture('/assets/textures/default.png');
     var miniMapScale = 5;
 
     const fov = Math.PI / 3;
@@ -346,7 +362,7 @@ window.onload = function() {
     var maindisplay = document.getElementById('display');
     var stats       = document.getElementById('stats');
 
-    var map = new Map(64, 64, grid, miniMapScale, colors);
+    var map = new Map(64, 64, grid, miniMapScale, colors, texture);
     var controls = new Controls();
     var player = new Player(29, 58, Math.PI * 0.0);
     var camera = new Camera3D(640, 480, resolution, fov)
