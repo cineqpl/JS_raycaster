@@ -147,8 +147,8 @@ window.onload = function() {
 
         // Check x and y axis independently,
         // so you won't stop completely upon hitting a wall
-        if (map.get(this.x + dx, this.y) <= 0) this.x += dx;
-        if (map.get(this.x, this.y + dy) <= 0) this.y += dy;
+        if (map.get(this.x + dx + 0.1 * Math.sign(dx), this.y) <= 0) this.x += dx;
+        if (map.get(this.x, this.y + dy + 0.1 * Math.sign(dy)) <= 0) this.y += dy;
     }
 
     Player.prototype.rotate = function(angle) {
@@ -271,15 +271,17 @@ window.onload = function() {
         }
 
         let columnWidth = this.width / this.resolution;
-        let xPos = this.width / 2 + columnWidth * (offset * this.resolution / this.fov);
-        let z = 600;
         let corrDist = Math.sqrt(dist) * Math.cos(offset);
+
+        let z = 600;
+        let xPos = this.width / 2 + columnWidth * (offset * this.resolution / this.fov);
+        let yPos = this.height / 2 - (z / 2) / corrDist
      
         let ctx = display.getContext('2d');
         ctx.drawImage(map.textures.source,
             (wallType - 1) * 64 + wallOffset * 63, darker * 64,
             64 * (columnWidth / this.resolution), 64,
-            xPos, this.height / 2 - (z / 2) / corrDist,
+            xPos, yPos,
             columnWidth, z / corrDist);
     }
 
@@ -352,7 +354,7 @@ window.onload = function() {
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
     ];
     var colors = {1: 'rgb(180, 180, 180)', 2: 'rgb(0, 51, 204)', 3: 'rgb(204, 102, 0)', 4: 'rgb(255, 255, 0)'};
-    var texture = new Texture('/assets/textures/default.png');
+    var textures = new Texture('/assets/textures/default.png');
     var miniMapScale = 5;
 
     const fov = Math.PI / 3;
@@ -362,7 +364,7 @@ window.onload = function() {
     var maindisplay = document.getElementById('display');
     var stats       = document.getElementById('stats');
 
-    var map = new Map(64, 64, grid, miniMapScale, colors, texture);
+    var map = new Map(64, 64, grid, miniMapScale, colors, textures);
     var controls = new Controls();
     var player = new Player(29, 58, Math.PI * 0.0);
     var camera = new Camera3D(640, 480, resolution, fov)
