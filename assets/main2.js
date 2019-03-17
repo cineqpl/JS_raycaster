@@ -10,17 +10,23 @@ window.onload = function() {
         }
     }
 
+    // Important - check for collisions only using Map.get()
+
     Map.prototype.get = function(x, y) {
         x = Math.floor(x);
         y = Math.floor(y);
         if(x < 0 || x > this.width - 1 || y < 0 || y > this.height - 1) return -1;
-        return this.wallGrid[x][y];
+        // Avoids indexing problem in 2D arrays
+        return this.wallGrid[y][x];
     }
 
     Map.prototype.drawMiniMap = function(canv, player) {
+
+        // Set canvas size
         canv.width = this.width * this.scale;
         canv.height = this.height * this.scale;
 
+        // Set canvas CSS size
         canv.style.width  = (this.width  * this.scale) + 'px';
         canv.style.height = (this.height * this.scale) + 'px';
 
@@ -29,8 +35,10 @@ window.onload = function() {
         ctx.fillStyle = "white";
         ctx.fillRect(0, 0, canv.width, canv.height);
 
-        for(let x = 0; x < this.width; x++) {
-            for(let y = 0; y < this.height; y++) {
+        // Draw the minimap
+        // To-do: add different minimap block colors
+        for(let y = 0; y < this.height; y++) {
+            for(let x = 0; x < this.width; x++) {
                 let wall = this.get(x, y);
 
                 if(wall > 0) {
@@ -44,58 +52,33 @@ window.onload = function() {
             }
         }
 
-        let playerSize = 6;
+        if(player != null) {
 
-        // Dot at player position
-        ctx.fillStyle = 'black';
-        ctx.fillRect(
-            player.x * this.scale - playerSize / 2,
-            player.y * this.scale - playerSize / 2,
-            playerSize, playerSize
-        );
+            let playerSize = 6;
 
-        // Line segment from player position at player angle
+            // Dot at player position
+            ctx.fillStyle = 'black';
+            ctx.fillRect(
+                player.x * this.scale - playerSize / 2,
+                player.y * this.scale - playerSize / 2,
+                playerSize, playerSize
+            );
 
-        ctx.strokeStyle = 'black';
-        ctx.beginPath();
-        ctx.moveTo(
-            player.x * this.scale,
-            player.y * this.scale
-        );
-        ctx.lineTo(
-            player.x * this.scale + playerSize * Math.cos(player.direction) * 5,
-            player.y * this.scale + playerSize * Math.sin(player.direction) * 5,
-        );
-        ctx.closePath();
-        ctx.stroke();
-    }
+            // Line segment from player position at player angle
+            ctx.strokeStyle = 'black';
+            ctx.beginPath();
+            ctx.moveTo(
+                player.x * this.scale,
+                player.y * this.scale
+            );
+            ctx.lineTo(
+                player.x * this.scale + playerSize * Math.cos(player.direction) * 5,
+                player.y * this.scale + playerSize * Math.sin(player.direction) * 5,
+            );
+            ctx.closePath();
+            ctx.stroke();
 
-    class Player {
-        constructor(initX, initY, initDir) {
-            this.x = initX;
-            this.y = initY;
-            this.direction = initDir;
-            this.moveSpeed = 3;
-            this.rotationSpeed = 63 * Math.PI / 180;
         }
-    }
-
-    Player.prototype.walk = function(distance, map) {
-        var dx = Math.cos(this.direction) * distance;
-        var dy = Math.sin(this.direction) * distance;
-        if (map.get(this.x + dx, this.y) <= 0) this.x += dx;
-        if (map.get(this.x, this.y + dy) <= 0) this.y += dy;
-    }
-
-    Player.prototype.rotate = function(angle) {
-        this.direction = (this.direction + angle + TWO_PI) % TWO_PI;
-    }
-
-    Player.prototype.move = function(states, map) {
-        if(states.right) this.rotate( Math.PI * this.rotationSpeed / 60);
-        if(states.left)  this.rotate(-Math.PI * this.rotationSpeed / 60);
-        if(states.forward)  this.walk( this.moveSpeed / 60, map);
-        if(states.backward) this.walk(-this.moveSpeed / 60, map);
     }
 
     class Controls {
@@ -120,12 +103,151 @@ window.onload = function() {
     }
 
     Controls.prototype.onKey = function (val, e) {
-        var state = this.codes[e.keyCode];
+        let state = this.codes[e.keyCode];
         if (typeof state === 'undefined') return;
         this.states[state] = val;
         e.preventDefault && e.preventDefault();
         e.stopPropagation && e.stopPropagation();
     }
+
+    class Player {
+        constructor(initX, initY, initDir) {
+            this.x = initX;
+            this.y = initY;
+            this.direction = initDir;
+            this.moveSpeed = 3;
+            this.rotationSpeed = 60 * Math.PI / 180;
+        }
+    }
+
+    Player.prototype.walk = function(distance, map) {
+        let dx = Math.cos(this.direction) * distance;
+        let dy = Math.sin(this.direction) * distance;
+
+        // Check x and y axis independently,
+        // so you won't stop completely upon hitting a wall
+        if (map.get(this.x + dx, this.y) <= 0) this.x += dx;
+        if (map.get(this.x, this.y + dy) <= 0) this.y += dy;
+    }
+
+    Player.prototype.rotate = function(angle) {
+        this.direction = (this.direction + angle + TWO_PI) % TWO_PI;
+    }
+
+    Player.prototype.move = function(states, map) {
+        if(states.right) this.rotate( Math.PI * this.rotationSpeed / 60);
+        if(states.left)  this.rotate(-Math.PI * this.rotationSpeed / 60);
+        if(states.forward)  this.walk( this.moveSpeed / 60, map);
+        if(states.backward) this.walk(-this.moveSpeed / 60, map);
+    }
+
+    class Camera3D {
+        constructor(width, height, resolution, fov) {
+            this.width = width;
+            this.height = height;
+            this.resolution = resolution;
+            this.fov = fov;
+        }
+    }
+
+    Camera3D.prototype.render = function(player, map, display) {
+        this.drawBackground(display);
+
+        // This is where the magic happens
+        this.drawColumns(player, map, display);
+    }
+
+    Camera3D.prototype.drawBackground = function(display) {
+        // Set display size and CSS size
+        display.width = this.width;
+        display.height = this.height;
+        display.style.width = (this.width * this.scale) + 'px';
+        display.style.height = (this.height * this.scale) + 'px';
+
+        let ctx = display.getContext('2d');
+
+        let background = ctx.createLinearGradient(0, 0, 0, this.height);
+        background.addColorStop(0.0, 'rgb(150, 150, 150)');
+        background.addColorStop(0.5, 'rgb( 60,  60,  60)');
+        background.addColorStop(1.0, 'rgb(150, 150, 150)');
+
+        ctx.fillStyle = background;
+        ctx.fillRect(0, 0, this.width, this.height);
+    }
+
+    Camera3D.prototype.drawColumns = function(player, map, display) {
+        let step = this.fov / this.resolution;
+
+        for(let i = -this.resolution / 2; i < this.resolution / 2; i++) {
+            this.drawColumn(player, i*step, map, display);
+        }
+    }
+
+    Camera3D.prototype.drawColumn = function(player, offset, map, display) {
+        let angle = (player.direction + offset + TWO_PI) % TWO_PI;
+        
+        var dist = 0;
+        let ifRight = (angle > TWO_PI * 0.75) || (angle < TWO_PI * 0.25);
+        let ifUp    = (angle > TWO_PI *  0.5);
+        let slope = Math.sin(angle) / Math.cos(angle);
+        let invslope = Math.cos(angle) / Math.sin(angle);
+
+        // Check horizontally first
+
+        var x = ifRight ? Math.ceil(player.x) : Math.floor(player.x);
+        var y = player.y + (x - player.x) * slope;
+        var dX = ifRight ? 1 : -1;
+        var dY = dX * slope;
+
+        while(x >= 0 && x < map.width && y >= 0 && y < map.height) {
+            var wallX = Math.floor(x + (ifRight ? 0 : -1));
+            var wallY = Math.floor(y);
+
+            if(map.get(wallX, wallY) > 0) {
+                var distX = x - player.x;
+                var distY = y - player.y;
+                dist = distX * distX + distY * distY;
+                break;
+            }
+
+            x += dX;
+            y += dY;
+        }
+
+        // Check vertically second
+
+        var y = ifUp   ? Math.floor(player.y) : Math.ceil(player.y);
+        var x = player.x + (y - player.y) * invslope;
+        var dY = ifUp ? -1 : 1;
+        var dX = dY * invslope;
+
+        while (x >= 0 && x < map.width && y >= 0 && y < map.height) {
+            var wallY = Math.floor(y + (ifUp ? -1 : 0));
+            var wallX = Math.floor(x);
+
+            if (map.get(wallX, wallY) > 0) {
+                var distX = x - player.x;
+                var distY = y - player.y;
+                var vertDist = distX * distX + distY * distY;
+                if((dist == 0) || (vertDist < dist)) dist = vertDist;
+                break;
+            }
+
+            x += dX;
+            y += dY;
+        }
+
+        let columnWidth = this.width / resolution;
+        let xPos = this.width / 2 + columnWidth * (offset * this.resolution / this.fov);
+        let corrDist = Math.sqrt(dist) * Math.cos(offset);
+     
+        let ctx = display.getContext('2d');
+        let lightning = Math.max(20, 60 - corrDist);
+        ctx.fillStyle = `hsl(240, 20%, ${lightning}%)`;
+        ctx.fillRect(xPos, this.height / 2 - 200 / corrDist, columnWidth, 400 / corrDist);
+    }
+
+    // Important - check for collisions only using Map.get()
 
     var grid = [
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -154,21 +276,28 @@ window.onload = function() {
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
     ];
 
-    var canv  = document.getElementById('minimap');
-    var stats = document.getElementById('stats');
+    const fov = Math.PI / 3;
+    const resolution = 640;
 
-    var map = new Map(24, 32, grid, 10);
+    var mapdisplay  = document.getElementById('minimap');
+    var maindisplay = document.getElementById('display');
+    var stats       = document.getElementById('stats');
+
+    var map = new Map(32, 24, grid, 10);
     var controls = new Controls();
     var player = new Player(1, 1, Math.PI * 0.5);
+    var camera = new Camera3D(640, 480, resolution, fov)
 
 
     function mainLoop() {
         player.move(controls.states, map);
-        map.drawMiniMap(canv, player);
+        map.drawMiniMap(mapdisplay, player);
+        camera.render(player, map, maindisplay);
         stats.innerText = `X: ${player.x.toFixed(3)} Y: ${player.y.toFixed(3)}
                           Direction: ${(player.direction * 180 / Math.PI).toFixed(3)}
                           Crouching: ${controls.states.crouch}`;
         requestAnimationFrame(mainLoop);
     }
+    
     requestAnimationFrame(mainLoop);
 }
