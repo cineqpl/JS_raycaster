@@ -354,7 +354,7 @@ window.onload = function() {
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
     ];
     var colors = {1: 'rgb(180, 180, 180)', 2: 'rgb(0, 51, 204)', 3: 'rgb(204, 102, 0)', 4: 'rgb(255, 255, 0)'};
-    var textures = new Texture('/assets/textures/default.png');
+    var textures = new Texture('assets/textures/default.png');
     var miniMapScale = 5;
 
     const fov = Math.PI / 3;
