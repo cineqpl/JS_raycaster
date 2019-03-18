@@ -104,6 +104,25 @@ window.onload = function() {
         }
     }
 
+    class Sounds {
+        constructor(sounds) {
+            this.src = sounds;
+            this.paces = 0;
+        }
+    }
+
+    Sounds.prototype.update = function(player) {
+        if(player.paces != this.paces) {
+            this.paces = player.paces;
+            if (this.paces % 12 == 1 || this.paces % 12 == 2) {
+                this.src[0].play();
+            }
+            if (this.paces % 12 == 7 || this.paces % 12 == 8) {
+                this.src[0].play();
+            }
+        }
+    }
+
     class Controls {
         constructor() {
             this.codes = {
@@ -138,8 +157,9 @@ window.onload = function() {
             this.x = initX;
             this.y = initY;
             this.direction = initDir;
-            this.moveSpeed = 5;
+            this.moveSpeed = 4;
             this.rotationSpeed = 60 * Math.PI / 180;
+            this.paces = 0;
         }
     }
 
@@ -149,8 +169,14 @@ window.onload = function() {
 
         // Check x and y axis independently,
         // so you won't stop completely upon hitting a wall
-        if (map.get(this.x + dx + 0.1 * Math.sign(dx), this.y) <= 0) this.x += dx;
-        if (map.get(this.x, this.y + dy + 0.1 * Math.sign(dy)) <= 0) this.y += dy;
+        if (map.get(this.x + dx + 0.1 * Math.sign(dx), this.y) <= 0) {
+            this.x += dx;
+            this.paces++;
+        }
+        if (map.get(this.x, this.y + dy + 0.1 * Math.sign(dy)) <= 0) {
+            this.y += dy;
+            this.paces++;
+        }
     }
 
     Player.prototype.rotate = function(angle) {
@@ -358,6 +384,8 @@ window.onload = function() {
     var textures = new Texture('assets/textures/128hd.png');
     var miniMapScale = 5;
 
+    var footstep = new Audio('assets/sounds/footstep.wav');
+
     const fov = Math.PI / 3;
     const resolution = 640;
 
@@ -369,12 +397,17 @@ window.onload = function() {
     var controls = new Controls();
     var player = new Player(29, 58, Math.PI * 0.0);
     var camera = new Camera3D(640, 480, resolution, fov)
+    var soundtrack = new Sounds([footstep]);
+    console.log(soundtrack.src);
+    soundtrack.src[0].play()
+
 
 
     function mainLoop() {
         player.move(controls.states, map);
         map.drawMiniMap(mapdisplay, player);
         camera.render(player, map, maindisplay);
+        soundtrack.update(player);
         stats.innerText = `X: ${player.x.toFixed(3)} Y: ${player.y.toFixed(3)}
                           Direction: ${(player.direction * 180 / Math.PI).toFixed(3)}
                           Crouching: ${controls.states.crouch}`;
