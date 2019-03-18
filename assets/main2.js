@@ -280,8 +280,8 @@ window.onload = function() {
      
         let ctx = display.getContext('2d');
         ctx.drawImage(map.textures.source,
-            (wallType - 1) * 64 + wallOffset * 63, darker * 64,
-            64 * (columnWidth / this.resolution), 64,
+            (wallType - 1) * 128 + wallOffset * 127, darker * 128,
+            128 * (columnWidth / this.resolution), 128,
             xPos, yPos,
             columnWidth, z / corrDist);
     }
@@ -355,7 +355,7 @@ window.onload = function() {
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
     ];
     var colors = {1: 'rgb(180, 180, 180)', 2: 'rgb(0, 51, 204)', 3: 'rgb(204, 102, 0)', 4: 'rgb(255, 255, 0)'};
-    var textures = new Texture('assets/textures/default.png');
+    var textures = new Texture('assets/textures/128hd.png');
     var miniMapScale = 5;
 
     const fov = Math.PI / 3;
