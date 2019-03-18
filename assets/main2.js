@@ -31,6 +31,9 @@ window.onload = function() {
         // Set canvas CSS size
         canv.style.width  = (this.width  * this.scale) + 'px';
         canv.style.height = (this.height * this.scale) + 'px';
+        canv.style.padding = '0px';
+        canv.style.border = '10px solid white';
+        canv.style.margin = '50px';
 
         var ctx = canv.getContext('2d');
 
@@ -38,7 +41,6 @@ window.onload = function() {
         ctx.fillRect(0, 0, canv.width, canv.height);
 
         // Draw the minimap
-        // To-do: add different minimap block colors
         for(let y = 0; y < this.height; y++) {
             for(let x = 0; x < this.width; x++) {
                 let wall = this.get(x, y);
@@ -182,19 +184,18 @@ window.onload = function() {
         // Set display size and CSS size
         display.width = this.width;
         display.height = this.height;
-        display.style.width = (this.width * this.scale) + 'px';
-        display.style.height = (this.height * this.scale) + 'px';
+        display.style.width = this.width + 'px';
+        display.style.height = this.height + 'px';
+        display.style.padding = '0px';
+        display.style.border = '10px solid white';
+        display.style.margin = '50px';
 
         let ctx = display.getContext('2d');
 
-        let background = ctx.createLinearGradient(0, 0, 0, this.height);
-        background.addColorStop( 0.0, 'rgb(150, 150, 150)');
-        background.addColorStop(0.49, 'rgb(130, 130, 130)');
-        background.addColorStop( 0.5, 'rgb( 60,  60,  60)');
-        background.addColorStop( 1.0, 'rgb(100, 100, 100)');
-
-        ctx.fillStyle = background;
-        ctx.fillRect(0, 0, this.width, this.height);
+        ctx.fillStyle = 'rgb(50, 50, 50)';
+        ctx.fillRect(0, 0, this.width, this.height / 2);
+        ctx.fillStyle = 'rgb(120, 120, 120)';
+        ctx.fillRect(0, this.height / 2 - 10, this.width, this.height / 2 + 10)
     }
 
     Camera3D.prototype.drawColumns = function(player, map, display) {
@@ -275,7 +276,7 @@ window.onload = function() {
 
         let z = 600;
         let xPos = this.width / 2 + columnWidth * (offset * this.resolution / this.fov);
-        let yPos = this.height / 2 - (z / 2) / corrDist
+        let yPos = this.height / 2 - (z / 2) / corrDist - 10;
      
         let ctx = display.getContext('2d');
         ctx.drawImage(map.textures.source,
